@@ -234,37 +234,6 @@ YOUR_CREDENTIAL_ID
 - End-to-end validation requires a configured n8n instance, Supabase/Postgres
   database, vector index, and frontend webhook URL.
 
-## Public Release Security Checklist
-
-Before publishing this repository:
-
-- Confirm there are no `.env`, `.env.local`, `.env.production`, or local config
-  files in the commit.
-- Confirm the source code does not include API keys, passwords, tokens, private
-  keys, or live production webhooks.
-- Confirm exported conversations such as `cegos-fase3-*.json` and
-  `cegos-fase3-*.txt` are not committed.
-- Confirm any n8n workflow export has credentials and execution data removed.
-- Confirm no partner documents, internal company files, personal data, or NDA
-  material are included.
-- If a secret was ever committed, rotate or revoke it before making the
-  repository public.
-
-## Current Frontend Audit Summary
-
-This repository has been prepared for public repository use:
-
-- No hard-coded API key, password, token, JWT, private key, GitHub token, OpenAI
-  key, AWS key, or npm token was found in the frontend or sanitized workflow
-  scan.
-- The previous hard-coded default webhook URL was removed from source code.
-- The optional `apiKey` field remains user-provided at runtime and defaults to
-  an empty string.
-- The n8n workflow was added only as a sanitized public export.
-- `.gitignore` excludes local env files, likely credential files, n8n local
-  folders, and generated conversation exports.
 
 ## License
-
-Add the project license here before publishing if required by the course or the
-partner organization.
+No required.
