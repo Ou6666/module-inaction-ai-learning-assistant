@@ -1,0 +1,2077 @@
+{
+  "name": "Commercial Negotiation Workflow_1.1",
+  "nodes": [
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolName": "CommercialNegotiation_RAG_Retriever",
+        "toolDescription": "Ferramenta de Recuperação RAG (Commercial Negotiation course material)\nEste nó funciona como ferramenta de pesquisa do Agente IA. Consulta a tabela documents no Supabase (Postgres + pgvector) para recuperar os excertos (chunks) mais relevantes do PDF do curso Commercial Negotiation (course-material.pdf) previously indexed from a configured document source.\n\nEmbeddings: OpenAI text-embedding-3-small (1536 dimensões). Tem de ser o mesmo modelo usado na indexação; mudar embeddings implica reindexação total.\n\nDevolve: Top 5 excertos + metadados (ex.: intervalos de linhas/origem) para fundamentação e citação.\n\nRestrição: O agente deve responder apenas com base no contexto recuperado; se não houver contexto relevante, deve recusar por estar fora do âmbito do curso.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 6,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        752,
+        1856
+      ],
+      "id": "df5f6fc7-c556-4083-828a-cce8a05b4e16",
+      "name": "Supabase Vector Store"
+    },
+    {
+      "parameters": {
+        "operation": "download",
+        "fileId": {
+          "__rl": true,
+          "value": "GOOGLE_DRIVE_FILE_ID",
+          "mode": "id"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleDrive",
+      "typeVersion": 3,
+      "position": [
+        1344,
+        1712
+      ],
+      "id": "32b2ad00-256d-49ce-a6c4-f050492635ec",
+      "name": "Google Drive"
+    },
+    {
+      "parameters": {
+        "mode": "insert",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1,
+      "position": [
+        1920,
+        1712
+      ],
+      "id": "0914d4c0-29d4-46e7-b29f-ba942fa7544f",
+      "name": "Supabase Vector Store1",
+      "alwaysOutputData": false
+    },
+    {
+      "parameters": {
+        "dataType": "binary",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.documentDefaultDataLoader",
+      "typeVersion": 1,
+      "position": [
+        1952,
+        1984
+      ],
+      "id": "94dcfbeb-9616-44c2-b84e-7e0b98c1d926",
+      "name": "Default Data Loader"
+    },
+    {
+      "parameters": {
+        "chunkOverlap": 150,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.textSplitterRecursiveCharacterTextSplitter",
+      "typeVersion": 1,
+      "position": [
+        2048,
+        2192
+      ],
+      "id": "45a99359-0e6e-4907-a38b-3079de869a40",
+      "name": "Recursive Character Text Splitter"
+    },
+    {
+      "parameters": {
+        "operation": "pdf",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.extractFromFile",
+      "typeVersion": 1,
+      "position": [
+        1536,
+        1712
+      ],
+      "id": "1ab1a16f-05b4-43d2-86eb-030e7ae4837d",
+      "name": "Extract from File"
+    },
+    {
+      "parameters": {
+        "operation": "toText",
+        "sourceProperty": "text",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.convertToFile",
+      "typeVersion": 1.1,
+      "position": [
+        1712,
+        1712
+      ],
+      "id": "a999cf1c-c277-42c7-bd12-a9da7e4264cd",
+      "name": "Convert to File"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.sessionId || $json.userId || 'default' }}",
+        "contextWindowLength": 10
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        496,
+        1888
+      ],
+      "id": "67b06a07-9680-4395-b483-016e53f00be7",
+      "name": "Postgres Chat Memory"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1712,
+        2032
+      ],
+      "id": "a0b3b0fa-e747-4d91-824e-25797f2794dd",
+      "name": "Embeddings OpenAI"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "mode": "list",
+          "value": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        224,
+        1792
+      ],
+      "id": "d04ffa3e-7e12-474e-a2ac-1963b4a7b790",
+      "name": "OpenAI Chat Model"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        816,
+        2080
+      ],
+      "id": "e7374482-5474-407a-b029-84f1b5f74428",
+      "name": "Embeddings OpenAI1"
+    },
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        1440,
+        2144
+      ],
+      "id": "a576cc3f-4321-448f-af33-92ab1ac56e4d",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "rag-chat",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        -496,
+        928
+      ],
+      "id": "e0731535-13d1-43c9-b08e-2250281d8081",
+      "name": "Webhook"
+    },
+    {
+      "parameters": {
+        "mode": "raw",
+        "jsonOutput": "={\n  \"action\": \"{{ $json.body.action || 'chat' }}\",\n  \"message\": \"{{ $json.body.message || '' }}\",\n  \"userId\": \"{{ $json.body.userId || '' }}\",\n  \"scenarioId\": \"{{ $json.body.scenarioId || 'commercial_negotiation' }}\",\n  \"roleplaySessionId\": \"{{ $json.body.roleplaySessionId || '' }}\",\n  \"totalQuestions\": \"{{ Number($json.body.totalQuestions || 10) }}\",\n  \"sessionId\": \"{{ $json.body.sessionId || '' }}\",\n  \"language\": \"{{ $json.body.language || 'pt' }}\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -304,
+        928
+      ],
+      "id": "92bba05b-0d95-47e6-9987-f3aeb2c0de13",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "rules": {
+          "values": [
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "start",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals"
+                    },
+                    "id": "d66d20d0-6b2c-4384-ad78-10ecc7a6f002"
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "start"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "c07df964-8bbe-44ad-8876-378547c678d1",
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "answer",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "answer"
+            },
+            {
+              "conditions": {
+                "options": {
+                  "caseSensitive": true,
+                  "leftValue": "",
+                  "typeValidation": "strict",
+                  "version": 3
+                },
+                "conditions": [
+                  {
+                    "id": "d44b5491-e34e-4754-b39c-31cdf5217274",
+                    "leftValue": "={{$json.action}}",
+                    "rightValue": "chat",
+                    "operator": {
+                      "type": "string",
+                      "operation": "equals",
+                      "name": "filter.operator.equals"
+                    }
+                  }
+                ],
+                "combinator": "and"
+              },
+              "renameOutput": true,
+              "outputKey": "chat"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.switch",
+      "typeVersion": 3.4,
+      "position": [
+        -128,
+        944
+      ],
+      "id": "69904215-4ab8-441e-883c-6387f729d672",
+      "name": "Switch"
+    },
+    {
+      "parameters": {
+        "jsCode": "const userId = $json.userId || 'anonymous_user';\nconst scenarioId = $json.scenarioId || 'commercial_negotiation';\nconst totalQuestions = Number($json.totalQuestions || 10);\n\nconst roleplaySessionId = `rp_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;\nconst memoryKey = `${userId}:${roleplaySessionId}`;\nconst startedAt = new Date().toISOString();\n\nreturn [\n  {\n    json: {\n      ...$json,\n      roleplaySessionId,\n      memoryKey,\n      startedAt,\n      status: 'active',\n      currentQuestionIndex: 1,\n      totalQuestions,\n      scenarioId,\n      userId\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        464,
+        192
+      ],
+      "id": "b428a596-7145-4b1d-94dd-dae16194467d",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "74146390-3561-4ad7-9094-0577248a14df",
+              "name": "success",
+              "value": true,
+              "type": "boolean"
+            },
+            {
+              "id": "eed8f95b-c5fc-4606-b5bc-7b8ef28ce26a",
+              "name": "answer",
+              "value": "={{ $json.output }}",
+              "type": "string"
+            },
+            {
+              "id": "9655941e-9f8c-407e-826d-b8d13027ed8b",
+              "name": "sessionId",
+              "value": "={{ $('Edit Fields').first().json.sessionId }}",
+              "type": "string"
+            },
+            {
+              "id": "4cea05d7-a51b-4f49-ae3c-222ba99b7c19",
+              "name": "format",
+              "value": "markdown",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        736,
+        1440
+      ],
+      "id": "dacbd45f-379a-4333-b1eb-c1031a2d7060",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "mode": "list",
+          "value": "roleplay_sessions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "current_question_index": "={{$json.currentQuestionIndex}}",
+            "total_questions": "={{$json.totalQuestions}}",
+            "off_topic_count": 0,
+            "final_score": 0,
+            "id": "={{$json.roleplaySessionId}}",
+            "user_id": "={{$json.userId}}",
+            "scenario_id": "={{$json.scenarioId}}",
+            "status": "={{$json.status}}",
+            "memory_key": "={{$json.memoryKey}}",
+            "started_at": "={{$json.startedAt}}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": true,
+              "defaultMatch": true,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scenario_id",
+              "displayName": "scenario_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "current_question_index",
+              "displayName": "current_question_index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "total_questions",
+              "displayName": "total_questions",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "off_topic_count",
+              "displayName": "off_topic_count",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "memory_key",
+              "displayName": "memory_key",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "started_at",
+              "displayName": "started_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "completed_at",
+              "displayName": "completed_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_score",
+              "displayName": "final_score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "final_feedback",
+              "displayName": "final_feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "meta",
+              "displayName": "meta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        720,
+        192
+      ],
+      "id": "febdc495-f095-4e9c-ac0e-871d13e0dfa6",
+      "name": "Insert rows in a table"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Generate exactly {{$json.totalQuestions}} client turns for a commercial negotiation role play.\n\nReturn only a JSON array with exactly {{$json.totalQuestions}} objects.\n\nEach object must contain exactly these keys:\n- question_index\n- question_text\n- expected_focus\n- scoring_rubric\n\nDo not evaluate any answer.\nDo not include score, positiveFeedback, isOnTopic, shouldAdvance, redirectMessage, or assistantMessage.",
+        "options": {
+          "systemMessage": "=You are a role play scenario planner for a corporate language training platform.\n\nYour task is to generate exactly {{$json.totalQuestions}} sequential client turns for ONE continuous commercial negotiation role play.\n\nIMPORTANT:\n- You are NOT evaluating the trainee.\n- You must NOT return isOnTopic, score, positiveFeedback, shouldAdvance, redirectMessage, or assistantMessage.\n- Those fields belong to the Answer Evaluator, not to this node.\n- Your only job is to create the role-play questions/turns before the session starts.\n\nScenario:\n- Scenario ID: {{$json.scenarioId}}\n- You play the CLIENT / business counterpart.\n- The trainee plays the salesperson or business representative.\n- The trainee must respond to each of your client turns using professional business language.\n\nStructure:\n- Turns 1-2: Opening, greetings, introductions, meeting context.\n- Turns 3-5: Core negotiation, needs, pricing, value, terms.\n- Turns 6-8: Objections, pushback, counteroffers, difficult moments.\n- Turns 9-10: Resolution, agreement, confirmation, closing.\n\nRules:\n- Generate exactly {{$json.totalQuestions}} items.\n- Each item must be one client turn.\n- The turns must form one continuous conversation.\n- Keep each client turn concise, realistic, and professional.\n- Ground the content in the course material when available.\n- Return ONLY a valid JSON array.\n- No markdown.\n- No explanation.\n- No wrapper object.\n- No evaluation fields.\n\nRequired JSON format:\n[\n  {\n    \"question_index\": 1,\n    \"question_text\": \"Good morning. Thank you for joining this meeting today. Could you please start by introducing yourself and your role in this project?\",\n    \"expected_focus\": \"The trainee should greet the client, introduce themselves, explain their role, and set a professional tone.\",\n    \"scoring_rubric\": \"Clear introduction, professional greeting, relevant role explanation, appropriate business tone.\"\n  },\n  {\n    \"question_index\": 2,\n    \"question_text\": \"Before we discuss the proposal, could you briefly explain your company's background and main strengths?\",\n    \"expected_focus\": \"The trainee should present the company background and connect its strengths to the client's needs.\",\n    \"scoring_rubric\": \"Clear company overview, relevant strengths, client-oriented framing, concise structure.\"\n  }\n]"
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        944,
+        192
+      ],
+      "id": "130ece31-b235-4428-9f3a-a9605bb3dce3",
+      "name": "Start Planner"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        832,
+        432
+      ],
+      "id": "e6e0c15b-d947-4608-8e49-1b30829a8dae",
+      "name": "OpenAI Chat Model1"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the course training materials for commercial negotiation content, including negotiation techniques, phrases, scenario examples, and evaluation criteria. Use this to ground your questions in the actual course content.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 6,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1024,
+        432
+      ],
+      "id": "fed171b5-582a-4a75-b692-473fbf055c53",
+      "name": "Supabase Vector Store2"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1024,
+        640
+      ],
+      "id": "5c6c2bd4-b202-4983-bfed-0928889e8ee3",
+      "name": "Embeddings OpenAI2"
+    },
+    {
+      "parameters": {
+        "jsCode": "let output = $json.output || $json.text || $json.message?.content || '';\n\n// Remove markdown fences if the model adds them\nif (typeof output === 'string') {\n  output = output.replace(/```json/gi, '').replace(/```/g, '').trim();\n}\n\nlet questions;\n\ntry {\n  questions = typeof output === 'string' ? JSON.parse(output) : output;\n} catch (e) {\n  const match = output.match(/\\[[\\s\\S]*\\]/);\n  if (match) {\n    questions = JSON.parse(match[0]);\n  } else {\n    throw new Error('Failed to parse questions JSON from AI output: ' + output.substring(0, 300));\n  }\n}\n\n// Some models return { questions: [...] } instead of [...]\nif (!Array.isArray(questions)) {\n  questions = questions.questions || questions.turns || questions.items || questions.data;\n}\n\nif (!Array.isArray(questions) || questions.length === 0) {\n  throw new Error('Parsed result is not a valid questions array');\n}\n\n// Safer: get session data from the Code node, not from the Postgres insert output\nconst sessionData = $('Code in JavaScript').first().json;\nconst roleplaySessionId = sessionData.roleplaySessionId || sessionData.id;\nconst totalQuestions = Number(sessionData.totalQuestions || 10);\n\nif (questions.length < totalQuestions) {\n  throw new Error(`Start Planner generated only ${questions.length} questions, expected ${totalQuestions}. Re-run Start Planner or make its prompt stricter.`);\n}\n\nfunction pick(obj, keys, fallback = '') {\n  for (const key of keys) {\n    if (obj && obj[key] !== undefined && obj[key] !== null && String(obj[key]).trim() !== '') {\n      return obj[key];\n    }\n  }\n  return fallback;\n}\n\nconst selectedQuestions = questions.slice(0, totalQuestions);\n\nconst items = selectedQuestions.map((q, i) => {\n  const questionIndex = Number(q.question_index || q.index || q.turn || i + 1);\n\n  const questionText =\n    typeof q === 'string'\n      ? q\n      : pick(q, [\n          'question_text',\n          'question',\n          'client_message',\n          'client_turn',\n          'dialogue_line',\n          'message',\n          'text',\n          'prompt'\n        ]);\n\n  if (!questionText) {\n    throw new Error(\n      `Question ${i + 1} is missing question_text. Available keys: ${Object.keys(q || {}).join(', ')}`\n    );\n  }\n\n  const expectedFocus =\n    typeof q === 'string'\n      ? ''\n      : pick(q, [\n          'expected_focus',\n          'expectedFocus',\n          'focus',\n          'ideal_response',\n          'idealResponse',\n          'learning_goal'\n        ]);\n\n  const scoringRubric =\n    typeof q === 'string'\n      ? ''\n      : pick(q, [\n          'scoring_rubric',\n          'scoringRubric',\n          'rubric',\n          'criteria',\n          'evaluation_criteria'\n        ]);\n\n  return {\n    json: {\n      roleplay_session_id: roleplaySessionId,\n      question_index: questionIndex,\n      question_text: questionText,\n      expected_focus: expectedFocus,\n      scoring_rubric: scoringRubric,\n      status: 'pending',\n      is_off_topic: false,\n      redirect_used: false,\n      answer_attempts: 0,\n      meta: JSON.stringify({}),\n\n      _is_first: questionIndex === 1,\n      _first_question_text: selectedQuestions[0].question_text || selectedQuestions[0].question || selectedQuestions[0].client_message || selectedQuestions[0].message || selectedQuestions[0].text,\n      _roleplay_session_id: roleplaySessionId\n    }\n  };\n});\n\nreturn items;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1328,
+        192
+      ],
+      "id": "7e0f550c-71e3-4522-a0ba-0235374f242a",
+      "name": "Parse Questions"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "roleplay_questions",
+          "mode": "list",
+          "cachedResultName": "roleplay_questions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "is_off_topic": false,
+            "redirect_used": false,
+            "question_index": "={{ $json.question_index }}",
+            "answer_attempts": "={{ $json.answer_attempts }}",
+            "roleplay_session_id": "={{ $json.roleplay_session_id }}",
+            "question_text": "={{ $json.question_text }}",
+            "expected_focus": "={{ $json.expected_focus }}",
+            "scoring_rubric": "={{ $json.scoring_rubric }}",
+            "status": "={{ $json.status }}",
+            "meta": "={{ $json.meta }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "roleplay_session_id",
+              "displayName": "roleplay_session_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "question_index",
+              "displayName": "question_index",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "question_text",
+              "displayName": "question_text",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "expected_focus",
+              "displayName": "expected_focus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "scoring_rubric",
+              "displayName": "scoring_rubric",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_answer",
+              "displayName": "user_answer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "ai_feedback",
+              "displayName": "ai_feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "is_off_topic",
+              "displayName": "is_off_topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "redirect_used",
+              "displayName": "redirect_used",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "answer_attempts",
+              "displayName": "answer_attempts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "asked_at",
+              "displayName": "asked_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "answered_at",
+              "displayName": "answered_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "meta",
+              "displayName": "meta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1552,
+        192
+      ],
+      "id": "004bbebb-035a-44e6-b2f8-f915bad06694",
+      "name": "Insert Questions"
+    },
+    {
+      "parameters": {
+        "jsCode": "// 拿到所有插入的 items\nconst allItems = $input.all();\n\n// 找第一题\nconst firstItem = allItems[0].json;\n\nreturn [\n  {\n    json: {\n      success: true,\n      roleplaySessionId: firstItem._roleplay_session_id || firstItem.roleplay_session_id,\n      currentQuestionIndex: 1,\n      totalQuestions: 10,\n      question: firstItem._first_question_text || firstItem.question_text,\n      _userId: firstItem._userId || 'unknown'\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1744,
+        192
+      ],
+      "id": "1c9e8a3c-ed5b-4d06-af4f-8d921a3168ac",
+      "name": "Return First Question"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        1984,
+        192
+      ],
+      "id": "2f8f956f-eaf5-46ea-89a0-be238af7abe3",
+      "name": "Respond to Webhook1"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM roleplay_sessions \nWHERE id = '{{ $json.roleplaySessionId }}' \nAND user_id = '{{ $json.userId }}'\nAND status = 'active'\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        432,
+        896
+      ],
+      "id": "2d639991-72f4-4840-9a92-5197cb45058a",
+      "name": "Get Current Session"
+    },
+    {
+      "parameters": {
+        "jsCode": "const session = $json;\n\nif (!session || !session.id) {\n  throw new Error('No active session found for this user');\n}\n\n// 从 Edit Fields 拿原始请求数据\nconst input = $('Edit Fields').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: session.id,\n      userId: session.user_id,\n      scenarioId: session.scenario_id,\n      currentQuestionIndex: session.current_question_index,\n      totalQuestions: session.total_questions,\n      memoryKey: session.memory_key,\n      offTopicCount: session.off_topic_count,\n      userMessage: input.message\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        608,
+        896
+      ],
+      "id": "d008d20b-b01e-4434-8c06-f99b2b6f120e",
+      "name": "Get Current Question Index"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT * FROM roleplay_questions \nWHERE roleplay_session_id = '{{ $json.sessionId }}'\nAND question_index = {{ $json.currentQuestionIndex }}\nLIMIT 1;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        816,
+        896
+      ],
+      "id": "cfb4e418-e7a1-4dae-b2db-5552fa21e992",
+      "name": "Get Current Question"
+    },
+    {
+      "parameters": {
+        "jsCode": "const question = $json;\nconst context = $('Get Current Question Index').first().json;\nconst input = $('Edit Fields').first().json;\n\nreturn [\n  {\n    json: {\n      sessionId: context.sessionId,\n      roleplaySessionId: context.sessionId,\n      userId: context.userId,\n      scenarioId: context.scenarioId,\n      currentQuestionIndex: context.currentQuestionIndex,\n      totalQuestions: context.totalQuestions,\n      memoryKey: context.memoryKey,\n      offTopicCount: context.offTopicCount,\n      userMessage: input.message,\n      language: input.language || 'pt',\n      questionText: question.question_text,\n      expectedFocus: question.expected_focus,\n      scoringRubric: question.scoring_rubric,\n      questionId: question.id\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1024,
+        896
+      ],
+      "id": "9a0aaa82-5233-439f-b7bd-297f1b1794ac",
+      "name": "Prepare Evaluator Input"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4.1-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1152,
+        1120
+      ],
+      "id": "b6f9b5f2-1781-4eea-9f77-7a9d7aa6bc2e",
+      "name": "OpenAI Chat Model2"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=The trainee responded: \"{{ $json.userMessage }}\"",
+        "options": {
+          "systemMessage": "=You are the Answer Evaluator AND the client for a corporate language training role play.\nYou have TWO jobs in a SINGLE JSON output:\n  (A) Stay in character as the CLIENT for the field \"assistantMessage\" only.\n  (B) Act as a hidden COACH for the fields \"score\", \"feedback\" and \"positiveFeedback\".\nThe coach fields are NOT spoken by the client and NOT shown inside the dialogue — the frontend renders them separately as formative feedback for this single turn.\n\nCurrent context:\n- Scenario: {{ $json.scenarioId }}\n- Question {{ $json.currentQuestionIndex }} of {{ $json.totalQuestions }}\n- You (as client) said: \"{{ $json.questionText }}\"\n- Expected focus of the trainee's answer: {{ $json.expectedFocus }}\n- Scoring rubric for this question: {{ $json.scoringRubric }}\n\nSteps:\n1. Decide if the trainee's response is ON TOPIC (relevant to the current negotiation question).\n2. If OFF TOPIC -> shouldAdvance=false, do NOT continue the negotiation, write a short in-character redirectMessage bringing them back to the current question, and set score=null.\n3. If ON TOPIC -> shouldAdvance=true, evaluate THIS answer and produce a numeric score plus qualitative feedback, then continue the negotiation as the client in \"assistantMessage\".\n\nScoring (only when on topic):\n- \"score\": integer 1-10 for THIS answer only, based on relevance to the expected focus, persuasiveness, clarity, professionalism and use of the rubric. This is a per-turn score, NOT a running total.\n- \"feedback\": 1-2 sentences of constructive, actionable feedback about this answer (what to improve and how).\n- \"positiveFeedback\": 1 sentence naming something concrete the trainee did well.\n\nCharacter rules for \"assistantMessage\":\n- Stay fully in character as the client. NEVER coach, grade, praise or say \"good answer\" inside assistantMessage. Just react and move the negotiation forward naturally.\n- Keep it concise and professional.\n\nLAST QUESTION RULE: If this is question {{ $json.totalQuestions }} of {{ $json.totalQuestions }}, be LENIENT about topicality. ANY closing-style response (summarizing agreements, proposing next steps, thanking the counterpart, confirming terms, formally closing the meeting) MUST be isOnTopic=true and shouldAdvance=true. Only mark off-topic if the response is completely absurd (weather, sports, personal chit-chat with zero business relevance). For non-final questions, only mark off-topic if the response is genuinely unrelated to commercial negotiation.\n\nLANGUAGE FLEXIBILITY: The trainee may answer in English, Portuguese or Chinese — all valid. Write feedback/positiveFeedback in the same language the trainee used. Do not penalize language switching.\n\nRespond ONLY with valid JSON, no markdown, no explanation, in EXACTLY this shape:\n{\n  \"isOnTopic\": true,\n  \"shouldAdvance\": true,\n  \"score\": 7,\n  \"feedback\": \"Constructive feedback about this specific answer, or empty string if off topic.\",\n  \"positiveFeedback\": \"One concrete thing the trainee did well, or empty string if off topic.\",\n  \"redirectMessage\": \"Only filled when off topic, otherwise empty string.\",\n  \"assistantMessage\": \"Your next in-character line as the client. Empty string if off topic.\"\n}",
+          "returnIntermediateSteps": false
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        1216,
+        896
+      ],
+      "id": "cf2e4c5c-0ef1-49dc-b7d4-73e7dfe6748d",
+      "name": "Answer Evaluator"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.memoryKey }}",
+        "contextWindowLength": 12
+      },
+      "type": "@n8n/n8n-nodes-langchain.memoryPostgresChat",
+      "typeVersion": 1.3,
+      "position": [
+        1328,
+        1120
+      ],
+      "id": "64ef52fc-e109-4e86-bf8f-c82784972375",
+      "name": "Postgres Chat Memory1"
+    },
+    {
+      "parameters": {
+        "jsCode": "let output = $json.output || $json.text || '';\n\noutput = output.replace(/```json/gi, '').replace(/```/g, '').trim();\n\nlet evaluation;\ntry {\n  evaluation = JSON.parse(output);\n} catch (e) {\n  const match = output.match(/\\{[\\s\\S]*\\}/);\n  if (match) {\n    evaluation = JSON.parse(match[0]);\n  } else {\n    throw new Error('Failed to parse evaluation JSON: ' + output.substring(0, 200));\n  }\n}\n\nconst context = $('Prepare Evaluator Input').first().json;\n\nreturn [\n  {\n    json: {\n      ...evaluation,\n      sessionId: context.sessionId,\n      userId: context.userId,\n      currentQuestionIndex: context.currentQuestionIndex,\n      totalQuestions: context.totalQuestions,\n      offTopicCount: context.offTopicCount,\n      userMessage: context.userMessage,\n      questionId: context.questionId,\n      memoryKey: context.memoryKey,\n      roleplaySessionId: context.roleplaySessionId,\n      language: context.language || 'pt',\n      isLastQuestion: context.currentQuestionIndex >= context.totalQuestions\n    }\n  }\n];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1552,
+        896
+      ],
+      "id": "29d09655-084e-40aa-a357-c9fac302ef6b",
+      "name": "Parse Evaluation"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "schema": {
+          "__rl": true,
+          "mode": "list",
+          "value": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "roleplay_questions",
+          "mode": "list",
+          "cachedResultName": "roleplay_questions"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "id": "={{ $('Parse Evaluation').first().json.questionId }}",
+            "status": "={{ $('Parse Evaluation').first().json.shouldAdvance ? \"completed\" : \"active\" }}",
+            "user_answer": "={{ $('Parse Evaluation').first().json.userMessage }}",
+            "ai_feedback": "={{ $('Parse Evaluation').first().json.feedback || $('Parse Evaluation').first().json.positiveFeedback || '' }}",
+            "score": "={{ $('Parse Evaluation').first().json.score ?? null }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "roleplay_session_id",
+              "displayName": "roleplay_session_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "question_index",
+              "displayName": "question_index",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "question_text",
+              "displayName": "question_text",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "expected_focus",
+              "displayName": "expected_focus",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "scoring_rubric",
+              "displayName": "scoring_rubric",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "status",
+              "displayName": "status",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_answer",
+              "displayName": "user_answer",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "ai_feedback",
+              "displayName": "ai_feedback",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "score",
+              "displayName": "score",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "is_off_topic",
+              "displayName": "is_off_topic",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "redirect_used",
+              "displayName": "redirect_used",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "boolean",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "answer_attempts",
+              "displayName": "answer_attempts",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "asked_at",
+              "displayName": "asked_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "answered_at",
+              "displayName": "answered_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "meta",
+              "displayName": "meta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2096,
+        912
+      ],
+      "id": "a4114760-8fc4-44ac-8517-8eb5ba425551",
+      "name": "Update Question",
+      "executeOnce": true
+    },
+    {
+      "parameters": {
+        "jsCode": "const eval_data = $('Parse Evaluation').first().json;\n\n// ─── 1. Off-topic: don't advance, redirect user ───\nif (!eval_data.shouldAdvance) {\n  return [{\n    json: {\n      success: true,\n      type: 'redirect',\n      roleplaySessionId: eval_data.sessionId,\n      currentQuestionIndex: eval_data.currentQuestionIndex,\n      totalQuestions: eval_data.totalQuestions,\n      isOffTopic: true,\n      isLastQuestion: eval_data.isLastQuestion,\n      redirectMessage: eval_data.redirectMessage,\n      question: eval_data.redirectMessage,\n      score: null,\n      feedback: '',\n      positiveFeedback: '',\n      completed: false\n    }\n  }];\n}\n\n// ─── 2. Last question + advance: return QUALITATIVE final feedback only ───\n// IMPORTANT: no finalScore / overall numeric score is exposed to the learner.\nif (eval_data.isLastQuestion) {\n  let fb = null;\n  try {\n    fb = $('Parse Feedback').first().json.finalFeedback;\n  } catch (e) {\n    fb = null;\n  }\n  fb = fb || {};\n\n  const strengths    = fb.what_went_well   || fb.strengths    || [];\n  const improvements = fb.areas_to_improve || fb.improvements  || [];\n  const nextSteps    = fb.next_steps       || fb.nextSteps     || [];\n  const summary      = fb.summary || fb.finalFeedback ||\n    'Sessão concluída. Reveja os pontos fortes e as áreas a melhorar abaixo.';\n\n  return [{\n    json: {\n      success: true,\n      type: 'completed',\n      roleplaySessionId: eval_data.sessionId,\n      currentQuestionIndex: eval_data.currentQuestionIndex,\n      totalQuestions: eval_data.totalQuestions,\n      isOffTopic: false,\n      isLastQuestion: true,\n      completed: true,\n\n      // qualitative summary only — NO finalScore / final numeric grade\n      finalFeedback: summary,\n      strengths: strengths,\n      improvements: improvements,\n      nextSteps: nextSteps\n    }\n  }];\n}\n\n// ─── 3. Normal advance to next question ───\nreturn [{\n  json: {\n    success: true,\n    type: 'next_question',\n    roleplaySessionId: eval_data.sessionId,\n    currentQuestionIndex: eval_data.currentQuestionIndex + 1,\n    totalQuestions: eval_data.totalQuestions,\n    isOffTopic: false,\n    isLastQuestion: false,\n    question: eval_data.assistantMessage,\n\n    // per-turn formative feedback\n    score: eval_data.score ?? null,\n    feedback: eval_data.feedback || '',\n    positiveFeedback: eval_data.positiveFeedback || '',\n\n    completed: false,\n    _newQuestionIndex: eval_data.currentQuestionIndex + 1\n  }\n}];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2496,
+        992
+      ],
+      "id": "14bc3b63-6656-40b2-86dd-f16fae638c4d",
+      "name": "Build Response"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "UPDATE roleplay_sessions\nSET \n  current_question_index = {{ $json.completed ? $json.currentQuestionIndex : ($json._newQuestionIndex || $json.currentQuestionIndex) }},\n  status = '{{ $json.completed ? \"completed\" : \"active\" }}',\n  completed_at = {{ $json.completed ? \"NOW()\" : \"NULL\" }},\n  final_feedback = {{ $json.completed && $json.finalFeedback ? \"'\" + JSON.stringify($json.finalFeedback).replace(/'/g, \"''\") + \"'::jsonb\" : \"NULL\" }}\nWHERE id = '{{ $json.roleplaySessionId }}';",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2672,
+        992
+      ],
+      "id": "b89a652c-9258-46bc-a8be-8e897592baef",
+      "name": "Update Session"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify($('Build Response').first().json) }}\n",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        2880,
+        992
+      ],
+      "id": "062e0e2d-e8be-43a1-8b06-b45ade01af42",
+      "name": "Respond to Webhook2"
+    },
+    {
+      "parameters": {
+        "mode": "retrieve-as-tool",
+        "toolDescription": "Search the course training materials for commercial negotiation content, including negotiation techniques, phrases, scenario examples, and evaluation criteria. Use this to ground your questions in the actual course content.",
+        "tableName": {
+          "__rl": true,
+          "value": "documents",
+          "mode": "list",
+          "cachedResultName": "documents"
+        },
+        "topK": 6,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.vectorStoreSupabase",
+      "typeVersion": 1.3,
+      "position": [
+        1472,
+        1120
+      ],
+      "id": "1c6df3e8-c536-47f4-bd3c-44dc6d136ff4",
+      "name": "Supabase Vector Store3"
+    },
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.embeddingsOpenAi",
+      "typeVersion": 1.2,
+      "position": [
+        1552,
+        1296
+      ],
+      "id": "b64963ea-4830-4848-a593-e0a628210ab1",
+      "name": "Embeddings OpenAI3"
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ $json }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.5,
+      "position": [
+        992,
+        1440
+      ],
+      "id": "f9803d6a-bb22-4d95-8469-a7919eb75e75",
+      "name": "Respond to Webhook3"
+    },
+    {
+      "parameters": {
+        "schema": {
+          "__rl": true,
+          "value": "public",
+          "mode": "list",
+          "cachedResultName": "public"
+        },
+        "table": {
+          "__rl": true,
+          "value": "roleplay_messages",
+          "mode": "list",
+          "cachedResultName": "roleplay_messages"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "question_index": "={{ $json.question_index }}",
+            "content": "={{ $json.content }}",
+            "roleplay_session_id": "={{ $json.roleplay_session_id }}",
+            "user_id": "={{ $json.user_id }}",
+            "sender": "={{ $json.sender }}",
+            "message_type": "={{ $json.message_type }}",
+            "meta": "={{ $json.meta }}"
+          },
+          "matchingColumns": [
+            "id"
+          ],
+          "schema": [
+            {
+              "id": "id",
+              "displayName": "id",
+              "required": false,
+              "defaultMatch": true,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true,
+              "removed": true
+            },
+            {
+              "id": "roleplay_session_id",
+              "displayName": "roleplay_session_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "user_id",
+              "displayName": "user_id",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "question_index",
+              "displayName": "question_index",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "number",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "sender",
+              "displayName": "sender",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "message_type",
+              "displayName": "message_type",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "content",
+              "displayName": "content",
+              "required": true,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "meta",
+              "displayName": "meta",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "object",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "created_at",
+              "displayName": "created_at",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "dateTime",
+              "canBeUsedToMatch": true,
+              "removed": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        1888,
+        896
+      ],
+      "id": "935e44ab-6adb-488b-9bf2-8a8059421539",
+      "name": "Insert Messages"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.message }}",
+        "hasOutputParser": true,
+        "options": {
+          "systemMessage": "És um agente de IA com foco pedagógico (Professor/Coach) para aprendizagem em contexto empresarial, no âmbito do curso atual.\n\nREGRA PRINCIPAL\nSó podes responder com base no RAG Context fornecido pelo sistema, recuperado dos materiais do curso indexados na base vetorial.\n\n1. REGRAS OBRIGATÓRIAS\n- Usa exclusivamente o contexto recuperado nesta interação.\n- Não uses conhecimento geral, memória do modelo, fontes externas ou suposições.\n- Não inventes factos, definições, exemplos, etapas, explicações ou conclusões.\n- Podes resumir, reorganizar e reformular o conteúdo de forma pedagógica, desde que não alteres o sentido original.\n- Sempre que possível, inclui fontes com base apenas nos metadados do contexto recuperado.\n- Se a pergunta estiver fora do âmbito do curso, deves recusar.\n- Se não houver contexto ou evidência suficiente, deves declarar isso de forma explícita.\n\n2. DISTINÇÃO OBRIGATÓRIA DE CASOS\nAplica exatamente uma das seguintes respostas quando apropriado:\n\n- Caso A — sem contexto recuperado:\n“Não foram recuperados excertos do curso para esta pergunta, por isso não consigo responder. Tenta novamente ou coloca uma pergunta relacionada com o curso.”\n\n- Caso B — contexto insuficiente ou parcialmente relevante:\n“Os excertos recuperados do curso não fornecem informação suficiente para responder com segurança a esta pergunta.”\n\n- Caso C — fora do âmbito do curso:\n“Como este curso é um teste interativo entre o utilizador e o modelo, não posso responder a nada fora do conteúdo do curso. Por favor, coloca uma pergunta relacionada com este curso.”\n\n3. COMPORTAMENTO PEDAGÓGICO\n- Mantém um tom positivo, claro, profissional e pedagógico.\n- Interage em modo pergunta–resposta.\n- O objetivo é ajudar o utilizador a compreender, praticar e consolidar o conteúdo.\n- Dá feedback em tempo real com base apenas no contexto recuperado.\n- Quando adequado, indica se o utilizador pode avançar ou se deve rever o conteúdo.\n- Não reveles imediatamente a solução completa em atividades de desafio, simulação ou aplicação prática, exceto se o utilizador pedir uma resposta direta.\n\n4. TIPOS DE INTERAÇÃO SUPORTADOS\n- Escolha múltipla\n- Verdadeiro/Falso\n- Resposta aberta\n- Ordenação\n- Cenário prático / simulação\n- Caso prático\n- Perguntas geradas com base no curso\n- Exercícios de aplicação\n\nRegras para avaliação:\n- Indica se a resposta do utilizador está correta, incorreta ou parcialmente correta.\n- Explica porquê apenas com base no contexto recuperado.\n- Após 2 erros consecutivos, recomenda revisão e simplifica a explicação.\n- Se o contexto não permitir validação suficiente, diz isso explicitamente.\n\n5. CONTEXTO DE NAVEGAÇÃO\n- O sistema pode fornecer:\n  - nível atual\n  - cenário atual\n- Deves respeitar sempre esse contexto.\n- Não mudes de cenário ou nível por iniciativa própria.\n\n6. FORMATO DE SAÍDA PARA WEB CHAT\nA resposta deve adaptar-se ao tipo de pedido do utilizador.\n\nA) Em perguntas de explicação, validação, correção ou esclarecimento:\n- Responde em 1 a 3 pontos curtos ou em 1 a 2 parágrafos curtos.\n- Usa apenas o contexto recuperado.\n- Evita blocos longos, densos ou excessivamente detalhados.\n- Sempre que útil, acrescenta 1 dica curta, 1 pergunta orientadora ou 1 mini-exercício simples.\n- Sempre que possível, inclui 1 a 3 fontes curtas com base apenas nos metadados do contexto.\n\nB) Em pedidos de criação pedagógica com base no curso:\n- Podes responder no formato mais útil para o pedido.\n- Podes usar bullet points, numeração, diálogo, cenário, exercício, simulação ou desafio.\n- Não és obrigado a incluir dica pedagógica ou fontes, salvo quando isso acrescentar valor.\n- Mantém frases curtas, boa legibilidade e espaçamento entre blocos.\n\n7. REGRAS DE INCERTEZA\n- Se apenas parte da resposta estiver suportada, responde apenas a essa parte.\n- Marca claramente o restante como: “não coberto pelos excertos recuperados”.\n- Nunca uses expressões como “em geral”, “normalmente” ou “costuma ser” para preencher lacunas.\n\n8. CONTROLO DE EXTENSÃO\n- Prefere respostas entre 60 e 140 palavras, salvo pedido explícito de maior detalhe.\n- Em interface de chat, prioriza sempre clareza, brevidade e legibilidade.\n\n9. FORMATO FINAL PREFERIDO\n\nA. Quando o utilizador pedir explicação, validação, correção ou esclarecimento, usa preferencialmente a seguinte estrutura:\n\n1. Resposta\n- [resposta direta]\n\n2. Dica pedagógica\n- [1 dica curta ou 1 pergunta orientadora]\n\n3. Fontes\n- [fonte 1]\n- [fonte 2]\n\nB. Quando o utilizador pedir geração de conteúdo com base no curso, por exemplo:\n- criar um cenário\n- criar perguntas\n- criar um exercício\n- criar um diálogo simulado\n- criar um caso prático\n- criar um teste ou desafio\n\nnão é necessário usar a estrutura fixa de “Resposta / Dica pedagógica / Fontes”.\n\nNesses casos:\n- responde no formato mais adequado ao pedido;\n- privilegia clareza, simplicidade e boa legibilidade;\n- podes usar bullet points, numeração, formato de diálogo, formato de exercício, formato de desafio ou formato de cenário;\n- só deves incluir fontes se isso acrescentar valor e se existirem metadados úteis no contexto recuperado;\n- o conteúdo tem de continuar estritamente fiel aos excertos recuperados, sem acrescentar informação de fora do contexto.\n\nSe o utilizador pedir um cenário, uma simulação, um caso prático ou perguntas para praticar:\n- cria uma situação fictícia, mas sempre baseada apenas no conteúdo recuperado do curso;\n- apresenta o contexto de forma breve, clara e realista;\n- faz depois uma pergunta ao utilizador para aplicar o que aprendeu;\n- usa formulações como:\n  - “Nesta situação, o que farias?”\n  - “Com base no curso, como responderias?”\n  - “Qual seria a melhor ação neste caso?”\n- não reveles imediatamente a resposta correta, exceto se o utilizador pedir uma resposta direta;\n- após a resposta do utilizador, avalia-a apenas com base no contexto recuperado.\n\n10. LEMBRETE FINAL\n- A tua prioridade máxima é fidelidade ao contexto recuperado, controlo de escopo, rastreabilidade e feedback pedagógico.\n- Nunca respondas para além do que está suportado pelos excertos recuperados.\n- Se houver conflito entre clareza e completude, prioriza fidelidade ao contexto.\n- Quando estiveres a conduzir um cenário, simulação ou desafio, o teu papel é orientar a aplicação prática do conteúdo do curso, e não antecipar imediatamente a solução.\n\nFORMATAÇÃO OBRIGATÓRIA PARA CHAT\n- Responde sempre com secções visíveis ou blocos claramente separados.\n- Usa bullet points ou numeração quando aplicável.\n- Mantém espaçamento entre secções.\n- Evita respostas compactadas num único bloco.\n- Quando o pedido for explicativo, usa preferencialmente a estrutura “Resposta / Dica pedagógica / Fontes”.\n- Quando o pedido for de geração de cenário, perguntas, exercício, simulação ou caso prático, usa antes o formato mais natural e adequado à tarefa."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [
+        288,
+        1440
+      ],
+      "id": "2fe9501b-ff61-4eb0-bad7-f7f27a7240c6",
+      "name": "Chat"
+    },
+    {
+      "parameters": {
+        "jsCode": "const data = $json;\n\nreturn [\n  {\n    json: {\n      roleplay_session_id: data.sessionId,\n      user_id: data.userId,\n      question_index: data.currentQuestionIndex,\n      sender: 'user',\n      message_type: 'answer',\n      content: data.userMessage,\n      meta: JSON.stringify({}),\n    }\n  },\n  {\n    json: {\n      roleplay_session_id: data.sessionId,\n      user_id: data.userId,\n      question_index: data.currentQuestionIndex,\n      sender: 'assistant',\n      message_type: 'feedback',\n      content: data.feedback || data.positiveFeedback || data.redirectMessage || '',\n      meta: JSON.stringify({ score: data.score ?? null, isOnTopic: data.isOnTopic }),\n    }\n  }\n];\n"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1728,
+        896
+      ],
+      "id": "eeb23256-f3e1-4ea6-aeef-e7a5661fb492",
+      "name": "Build Messages"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "21ec26ee-7b97-4e1a-a373-f68b5ae62443",
+              "leftValue": "={{ $('Parse Evaluation').first().json.isLastQuestion }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8f71dbe8-27f0-4bd2-8f81-ffceee7a1410",
+              "leftValue": "={{ $('Parse Evaluation').first().json.shouldAdvance }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        2288,
+        912
+      ],
+      "id": "954fa3c4-c131-44ab-88df-5bff048fa62b",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT sender, content, created_at\nFROM roleplay_messages\nWHERE roleplay_session_id = '{{ $('Parse Evaluation').first().json.sessionId }}'\nORDER BY created_at ASC;",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.postgres",
+      "typeVersion": 2.6,
+      "position": [
+        2496,
+        736
+      ],
+      "id": "2fcb8ac4-dce3-4ff1-a91a-fee5bf18ca9b",
+      "name": "Fetch Messages"
+    },
+    {
+      "parameters": {
+        "jsCode": "const messages = $input.all().map(i => i.json);\nconst transcript = messages\n  .filter(m => m.sender === 'user' || m.sender === 'assistant')\n  .map(m => `[${String(m.sender).toUpperCase()}] ${m.content}`)\n  .join('\\n\\n');\n\nconst context = $('Parse Evaluation').first().json;\n\nreturn [{\n  json: {\n    ...context,\n    transcript,\n    language: context.language || 'pt'\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2704,
+        736
+      ],
+      "id": "fc4516d5-d14e-4811-ad13-47ba5626f5f1",
+      "name": "Build Transcript"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Message a model (json_schema) returns a nested object, not a string.\nlet raw =\n  $json.message?.content ??\n  $json.output?.[0]?.content?.[0]?.text ??\n  $json.content?.[0]?.text ??\n  $json.output ??\n  $json.text ??\n  '';\n\nlet feedback;\n\nif (raw && typeof raw === 'object') {\n  // already parsed by the json_schema response format\n  feedback = raw;\n} else {\n  let s = String(raw).replace(/```json/gi, '').replace(/```/g, '').trim();\n  try {\n    feedback = JSON.parse(s);\n  } catch (e) {\n    const match = s.match(/\\{[\\s\\S]*\\}/);\n    if (match) {\n      feedback = JSON.parse(match[0]);\n    } else {\n      feedback = {\n        summary: '',\n        what_went_well: [],\n        areas_to_improve: [],\n        next_steps: ['Sessão concluída. Feedback indisponível devido a erro de processamento.'],\n        _parse_error: true\n      };\n    }\n  }\n}\n\nconst context = $('Build Transcript').first().json;\n\nreturn [{\n  json: {\n    ...context,\n    finalFeedback: feedback\n  }\n}];"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        3152,
+        736
+      ],
+      "id": "c923774f-6145-4d51-b48a-7f7807500cfb",
+      "name": "Parse Feedback"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4.1-mini",
+          "mode": "list",
+          "cachedResultName": "GPT-4.1-MINI"
+        },
+        "responses": {
+          "values": [
+            {
+              "role": "system",
+              "content": "És um formador de línguas do Cegoc. O utilizador acabou de completar uma sessão de role-play com 10 perguntas. Analisa todas as 10 respostas em conjunto e gera feedback construtivo.\n\nREGRAS CRÍTICAS:\n- NÃO atribuas notas, pontuações, percentagens, nem palavras como \"aprovado/reprovado/passou/falhou\".\n- Foca-te em padrões observados ao longo das 10 respostas, não em respostas isoladas.\n- Tom: construtivo, encorajador, profissional.\n- Idioma da resposta: o que vier indicado no User Message (pt / en / zh).\n\nOUTPUT: devolve APENAS JSON válido (sem markdown, sem ```), com esta estrutura exata:\n\n{\n  \"summary\":          \"1 a 2 frases de resumo qualitativo global da sessão (sem números).\",\n  \"what_went_well\":   [\"...\", \"...\", \"...\"],\n  \"areas_to_improve\": [\"...\", \"...\", \"...\"],\n  \"next_steps\":       [\"...\", \"...\", \"...\"]\n}\n\nCada array: 2 a 4 pontos, 1 frase cada, concreta e acionável. Refere-te a aspetos como vocabulário, estrutura, tom, gramática, adequação cultural — sem citar verbatim o que o utilizador disse."
+            },
+            {
+              "content": "==Conversa completa do role play (10 perguntas):\n\n{{ $json.transcript }}\n\nIdioma da resposta: {{ $json.language }}"
+            }
+          ]
+        },
+        "builtInTools": {},
+        "options": {
+          "maxTokens": 1500,
+          "textFormat": {
+            "textOptions": {
+              "type": "json_schema",
+              "name": "final_feedback",
+              "schema": "{\n  \"type\": \"object\",\n  \"properties\": {\n    \"summary\": {\n      \"type\": \"string\",\n      \"description\": \"1-2 sentence qualitative overall summary of the session, no numbers/grades.\"\n    },\n    \"what_went_well\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"2 to 4 concrete points about what the trainee did well, each one short sentence.\"\n    },\n    \"areas_to_improve\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"2 to 4 concrete and actionable points about where the trainee can improve.\"\n    },\n    \"next_steps\": {\n      \"type\": \"array\",\n      \"items\": {\n        \"type\": \"string\"\n      },\n      \"description\": \"2 to 4 specific suggestions for what to review or practice next.\"\n    }\n  },\n  \"required\": [\n    \"summary\",\n    \"what_went_well\",\n    \"areas_to_improve\",\n    \"next_steps\"\n  ],\n  \"additionalProperties\": false\n}",
+              "description": "Structured qualitative feedback for a corporate language role-play session, with three sections: strengths, areas to improve, and next steps."
+            }
+          },
+          "temperature": 0.4
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 2.1,
+      "position": [
+        2864,
+        736
+      ],
+      "id": "a2aca69a-394e-40a9-b85b-a268411ae261",
+      "name": "Final Feedback Generator"
+    }
+  ],
+  "connections": {
+    "Supabase Vector Store": {
+      "ai_tool": [
+        [
+          {
+            "node": "Chat",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Drive": {
+      "main": [
+        [
+          {
+            "node": "Extract from File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Default Data Loader": {
+      "ai_document": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_document",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Recursive Character Text Splitter": {
+      "ai_textSplitter": [
+        [
+          {
+            "node": "Default Data Loader",
+            "type": "ai_textSplitter",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Extract from File": {
+      "main": [
+        [
+          {
+            "node": "Convert to File",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Convert to File": {
+      "main": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "Chat",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store1",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Chat",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI1": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Google Drive",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "Switch",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Switch": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Get Current Session",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Chat",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook3",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Insert rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert rows in a table": {
+      "main": [
+        [
+          {
+            "node": "Start Planner",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Start Planner",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store2": {
+      "ai_tool": [
+        [
+          {
+            "node": "Start Planner",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI2": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store2",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Start Planner": {
+      "main": [
+        [
+          {
+            "node": "Parse Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Questions": {
+      "main": [
+        [
+          {
+            "node": "Insert Questions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Questions": {
+      "main": [
+        [
+          {
+            "node": "Return First Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Return First Question": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Session": {
+      "main": [
+        [
+          {
+            "node": "Get Current Question Index",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Question Index": {
+      "main": [
+        [
+          {
+            "node": "Get Current Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Current Question": {
+      "main": [
+        [
+          {
+            "node": "Prepare Evaluator Input",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare Evaluator Input": {
+      "main": [
+        [
+          {
+            "node": "Answer Evaluator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model2": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Answer Evaluator",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Postgres Chat Memory1": {
+      "ai_memory": [
+        [
+          {
+            "node": "Answer Evaluator",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Answer Evaluator": {
+      "main": [
+        [
+          {
+            "node": "Parse Evaluation",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Evaluation": {
+      "main": [
+        [
+          {
+            "node": "Build Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Question": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Response": {
+      "main": [
+        [
+          {
+            "node": "Update Session",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Update Session": {
+      "main": [
+        [
+          {
+            "node": "Respond to Webhook2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Supabase Vector Store3": {
+      "ai_tool": [
+        [
+          {
+            "node": "Answer Evaluator",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Embeddings OpenAI3": {
+      "ai_embedding": [
+        [
+          {
+            "node": "Supabase Vector Store3",
+            "type": "ai_embedding",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Insert Messages": {
+      "main": [
+        [
+          {
+            "node": "Update Question",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Chat": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Messages": {
+      "main": [
+        [
+          {
+            "node": "Insert Messages",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Fetch Messages",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Messages": {
+      "main": [
+        [
+          {
+            "node": "Build Transcript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build Transcript": {
+      "main": [
+        [
+          {
+            "node": "Final Feedback Generator",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Parse Feedback": {
+      "main": [
+        [
+          {
+            "node": "Build Response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Final Feedback Generator": {
+      "main": [
+        [
+          {
+            "node": "Parse Feedback",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "nodeGroups": [],
+  "tags": [
+    {
+      "updatedAt": "2026-03-26T09:30:49.880Z",
+      "createdAt": "2026-03-26T09:30:49.880Z",
+      "id": "6APh4iEfPvPXEpN5",
+      "name": "Ouhao"
+    }
+  ]
+}
